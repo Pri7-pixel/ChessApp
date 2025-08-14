@@ -52,18 +52,46 @@ A comprehensive Streamlit application for calculating and tracking chess ratings
 - **Game History**: Chronological list of all recorded games
 - **Statistics**: Detailed analytics and rating progression charts
 
-## Elo Rating System
+## Custom Rating System
 
-The app uses the standard Elo rating system:
+The app uses a custom rating system designed for chess rating calculations:
 
-- **Expected Score**: `E = 1 / (1 + 10^((Rb - Ra) / 400))`
-- **New Rating**: `R' = R + K * (S - E)`
+### Rating Rules:
 
-Where:
-- `R` = Current rating
-- `E` = Expected score (0-1)
-- `S` = Actual score (1 for win, 0.5 for draw, 0 for loss)
-- `K` = K-factor (set to 32 for this application)
+**i) Entry** → 1000
+
+**ii) If Same Rating**
+- Draw → 0
+
+**iii) If Rating Gap < 25**
+- Draw → +25 (For lower rated), -25 (For higher rated)
+
+**iv) If Rating Gap < 50**
+- Draw → +25 (For lower rated), -25 (For higher rated)
+
+**v) If Rating Gap < 500**
+- Winner → +100, Loser → -100
+- Draw → +25 (For lower rated), -25 (For higher rated)
+
+**vi) If Rating Gap >= 500 And < 700**
+- Winner → +200 (For lower rated), +75 (For higher rated)
+- Loser → -75 (For lower rated), -200 (For higher rated)
+- Draw → +50 (For lower rated), -50 (For higher rated)
+
+**vii) If Rating Gap >= 700 And < 850**
+- Winner → +250 (For lower rated), +50 (For higher rated)
+- Loser → -50 (For lower rated), -250 (For higher rated)
+- Draw → +75 (For lower rated), -75 (For higher rated)
+
+**viii) If Rating Gap >= 850 And < 1000**
+- Winner → +300 (For lower rated), +25 (For higher rated)
+- Loser → -25 (For lower rated), -300 (For higher rated)
+- Draw → +100 (For lower rated), -100 (For higher rated)
+
+**ix) If Rating Gap >= 1000**
+- Winner → +400 (For lower rated), 0 (For higher rated)
+- Loser → 0 (For lower rated), -400 (For higher rated)
+- Draw → +125 (For lower rated), -125 (For higher rated)
 
 ## Data Storage
 
@@ -103,8 +131,8 @@ These files are automatically created when you first add players or record games
 ## Customization
 
 You can modify the following parameters in the `ChessRatingCalculator` class:
-- `k_factor`: Controls how much ratings change per game (default: 32)
-- `initial_rating`: Starting rating for new players (default: 1200)
+- `initial_rating`: Starting rating for new players (default: 1000)
+- Rating change rules: Modify the `calculate_rating_change` method to adjust rating calculations
 
 ## Requirements
 

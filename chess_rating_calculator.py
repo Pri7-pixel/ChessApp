@@ -51,24 +51,124 @@ st.markdown("""
 
 class ChessRatingCalculator:
     def __init__(self):
-        self.k_factor = 32  # K-factor for rating calculations
-        self.initial_rating = 1200  # Starting rating for new players
+        self.initial_rating = 1000  # Starting rating for new players
         
-    def calculate_expected_score(self, rating_a, rating_b):
-        """Calculate expected score for player A against player B"""
-        return 1 / (1 + 10 ** ((rating_b - rating_a) / 400))
+    def calculate_rating_change(self, player1_rating, player2_rating, result):
+        """
+        Calculate rating changes based on custom rating system
+        
+        Args:
+            player1_rating: Rating of player 1
+            player2_rating: Rating of player 2
+            result: Game result ('1-0', '0-1', or '1/2-1/2')
+            
+        Returns:
+            tuple: (player1_change, player2_change)
+        """
+        rating_gap = abs(player1_rating - player2_rating)
+        lower_rated = player1_rating if player1_rating < player2_rating else player2_rating
+        higher_rated = player2_rating if player1_rating < player2_rating else player1_rating
+        player1_is_lower = player1_rating < player2_rating
+        
+        # Determine winner and loser
+        if result == '1-0':
+            winner_rating = player1_rating
+            loser_rating = player2_rating
+            winner_is_lower = player1_is_lower
+        elif result == '0-1':
+            winner_rating = player2_rating
+            loser_rating = player1_rating
+            winner_is_lower = not player1_is_lower
+        else:  # Draw
+            winner_rating = None
+            loser_rating = None
+            winner_is_lower = None
+        
+        # Calculate rating changes based on gap
+        if rating_gap == 0:  # Same rating
+            if result == '1/2-1/2':  # Draw
+                return 0, 0
+            else:  # Win/Loss
+                return 100, -100
+                
+        elif rating_gap < 25:  # Gap < 25
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 25, -25
+                else:
+                    return -25, 25
+            else:  # Win/Loss
+                return 100, -100
+                
+        elif rating_gap < 50:  # Gap 25-49
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 25, -25
+                else:
+                    return -25, 25
+            else:  # Win/Loss
+                return 100, -100
+                
+        elif rating_gap < 500:  # Gap 50-499
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 25, -25
+                else:
+                    return -25, 25
+            else:  # Win/Loss
+                return 100, -100
+                
+        elif rating_gap < 700:  # Gap 500-699
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 50, -50
+                else:
+                    return -50, 50
+            else:  # Win/Loss
+                if winner_is_lower:
+                    return 200, -75
+                else:
+                    return 75, -200
+                    
+        elif rating_gap < 850:  # Gap 700-849
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 75, -75
+                else:
+                    return -75, 75
+            else:  # Win/Loss
+                if winner_is_lower:
+                    return 250, -50
+                else:
+                    return 50, -250
+                    
+        elif rating_gap < 1000:  # Gap 850-999
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 100, -100
+                else:
+                    return -100, 100
+            else:  # Win/Loss
+                if winner_is_lower:
+                    return 300, -25
+                else:
+                    return 25, -300
+                    
+        else:  # Gap >= 1000
+            if result == '1/2-1/2':  # Draw
+                if player1_is_lower:
+                    return 125, -125
+                else:
+                    return -125, 125
+            else:  # Win/Loss
+                if winner_is_lower:
+                    return 400, 0
+                else:
+                    return 0, -400
     
-    def calculate_new_rating(self, current_rating, expected_score, actual_score, k_factor=None):
-        """Calculate new rating based on game result"""
-        if k_factor is None:
-            k_factor = self.k_factor
-        return current_rating + k_factor * (actual_score - expected_score)
-    
-    def calculate_rating_change(self, current_rating, expected_score, actual_score, k_factor=None):
-        """Calculate rating change for a game"""
-        if k_factor is None:
-            k_factor = self.k_factor
-        return k_factor * (actual_score - expected_score)
+    def calculate_new_rating(self, current_rating, rating_change):
+        """Calculate new rating based on rating change"""
+        return current_rating + rating_change
 
 def load_data():
     """Load existing data from JSON files"""
@@ -202,7 +302,7 @@ def add_player_page(players):
     
     with st.form("add_player_form"):
         player_name = st.text_input("Player Name", placeholder="Enter player name")
-        initial_rating = st.number_input("Initial Rating", value=1200, min_value=0, max_value=3000)
+        initial_rating = st.number_input("Initial Rating", value=1000, min_value=0, max_value=3000)
         
         submitted = st.form_submit_button("Add Player")
         
@@ -249,24 +349,12 @@ def record_game_page(players, games, calculator):
         submitted = st.form_submit_button("Record Game")
         
         if submitted:
-            # Calculate expected scores
-            expected_score_1 = calculator.calculate_expected_score(player1_rating, player2_rating)
-            expected_score_2 = calculator.calculate_expected_score(player2_rating, player1_rating)
-            
-            # Determine actual scores
-            if result == "1-0":
-                actual_score_1 = 1.0
-                actual_score_2 = 0.0
-            elif result == "0-1":
-                actual_score_1 = 0.0
-                actual_score_2 = 1.0
-            else:  # Draw
-                actual_score_1 = 0.5
-                actual_score_2 = 0.5
+            # Calculate rating changes using custom logic
+            rating_change_1, rating_change_2 = calculator.calculate_rating_change(player1_rating, player2_rating, result)
             
             # Calculate new ratings
-            new_rating_1 = calculator.calculate_new_rating(player1_rating, expected_score_1, actual_score_1)
-            new_rating_2 = calculator.calculate_new_rating(player2_rating, expected_score_2, actual_score_2)
+            new_rating_1 = calculator.calculate_new_rating(player1_rating, rating_change_1)
+            new_rating_2 = calculator.calculate_new_rating(player2_rating, rating_change_2)
             
             # Update player statistics
             players[player1]['rating'] = new_rating_1
@@ -294,8 +382,8 @@ def record_game_page(players, games, calculator):
                 'player2_old_rating': player2_rating,
                 'player1_new_rating': new_rating_1,
                 'player2_new_rating': new_rating_2,
-                'rating_change_1': new_rating_1 - player1_rating,
-                'rating_change_2': new_rating_2 - player2_rating
+                'rating_change_1': rating_change_1,
+                'rating_change_2': rating_change_2
             }
             
             games.append(game_record)
