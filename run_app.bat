@@ -1,0 +1,9 @@
+@echo off
+echo Starting Chess Rating Calculator...
+echo.
+echo Installing dependencies...
+pip install -r requirements.txt
+echo.
+echo Starting the application...
+streamlit run chess_rating_calculator.py
+pause
